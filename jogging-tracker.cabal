@@ -1,0 +1,32 @@
+name:          jogging-tracker
+version:       0.0.0
+cabal-version: >= 1.8
+build-type:    Simple
+
+executable          jogging-tracker
+    hs-source-dirs: src
+    main-is:        Main.hs
+    ghc-options:    -Wall -threaded -O2 -rtsopts -with-rtsopts=-N
+    extensions:     OverloadedStrings
+    build-depends:  base   >= 4      && < 5
+                  , scotty
+                  , postgresql-simple             >= 0.4.10.0
+                  , aeson                         >= 0.8.1.1
+                  , http-types                    >= 0.9
+                  , bytestring                    >= 0.9        && < 0.11
+                  , case-insensitive              >=0.2 && <1.3
+                  , HTTP                          >= 4000.2.19
+                  , transformers                  >= 0.4.3.0
+                  , text                          >= 0.11       && < 2.0
+                  , vault                         >= 0.3.0.7
+                  , jwt
+                  , wai                           >= 3.0.2.3
+                  , wai-middleware-static         >= 0.7.0.1
+                  , wai-extra                     >= 3.0.7
+                  , resource-pool                 >= 0.2.3.2
+                  , word8                         >= 0.1
+                  , time
+                  , jose                          >= 0.4
+                  , configurator                  >= 0.3.0.0
+                  , containers                    >= 0.5.7.1
+                  , time                          >= 1.6.0.1
