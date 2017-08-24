@@ -3,25 +3,25 @@
 module Main where
 
 import Db
-import Views
 import Domain
 import Utils
+import Views
 
+import Control.Monad.IO.Class
 import Data.Aeson hiding (json)
+import qualified Data.Configurator as C
+import qualified Data.Configurator.Types as C
+import Data.Pool(createPool)
+import Database.PostgreSQL.Simple
+import qualified Data.Text.Lazy as TL
 import Data.Time
-import Web.Scotty
-import Web.Scotty.Internal.Types (ActionT)
 import qualified Network.HTTP.Types as H
 import Network.Wai
 import Network.Wai.Middleware.Static
 import Network.Wai.Middleware.RequestLogger (logStdout)
 import Network.Wai.Middleware.JWT
-import Control.Monad.IO.Class
-import qualified Data.Configurator as C
-import qualified Data.Configurator.Types as C
-import Data.Pool(createPool)
-import qualified Data.Text.Lazy as TL
-import Database.PostgreSQL.Simple
+import Web.Scotty
+import Web.Scotty.Internal.Types (ActionT)
 
 -- Parse file "application.conf" and get the DB connection info
 makeDbConfig :: C.Config -> IO (Maybe Db.DbConfig)
@@ -75,8 +75,8 @@ main = do
                                       sessionsList sessions                   -- show session list
 
               -- VIEW
-              get    "/sessions/:id" $ do id <- param "id" :: ActionM TL.Text -- get the article id from the request
-                                          maybeSession <- liftIO $ findSession pool id -- get the session from the DB
+              get    "/sessions/:id" $ do _id <- param "id" :: ActionM TL.Text -- get the article id from the request
+                                          maybeSession <- liftIO $ findSession pool _id -- get the session from the DB
                                           viewSession maybeSession           -- show the session if it was found
 
               -- CREATE
@@ -90,9 +90,9 @@ main = do
                                       updatedSession session     -- show info that the session was updated
 
               -- DELETE
-              delete "/sessions/:id" $ do id <- param "id" :: ActionM TL.Text -- get the session id
-                                          deleteSession pool id  -- delete the article from the DB
-                                          deletedSession id      -- show info that the session was deleted
+              delete "/sessions/:id" $ do _id <- param "id" :: ActionM TL.Text -- get the session id
+                                          deleteSession pool _id  -- delete the article from the DB
+                                          deletedSession _id      -- show info that the session was deleted
 
 -----------------------------------------------
 
