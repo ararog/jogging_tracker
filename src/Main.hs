@@ -47,7 +47,6 @@ main :: IO ()
 main = do
     loadedConf <- C.load [C.Required "application.conf"]
     dbConf <- makeDbConfig loadedConf
-    now <- getCurrentTime
 
     case dbConf of
       Nothing -> putStrLn "No database configuration found, terminating..."
@@ -59,6 +58,7 @@ main = do
               middleware $ jwt "1978@rpa" ["/auth", "/test", "/favicon.ico"]
 
               post "/auth/login" $ do user <- getUserParam             -- read the request body, try to parse it into user
+                                      now <- liftIO getCurrentTime
                                       case user of
                                         Nothing ->
                                            forbidden

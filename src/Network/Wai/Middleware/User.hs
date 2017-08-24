@@ -18,3 +18,4 @@ load_user :: Pool Connection -> Middleware
 load_user pool app req sendRsp = do
     headers <- requestHeaders req
     maybeUser <- liftIO $ findUser pool headers["USER"]
+    app req sendRsp
