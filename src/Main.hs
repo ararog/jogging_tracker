@@ -8,18 +8,18 @@ import Domain
 import Utils
 
 import Data.Aeson hiding (json)
+import Data.Time
 import Web.Scotty
 import Web.Scotty.Internal.Types (ActionT)
 import qualified Network.HTTP.Types as H
 import Network.Wai
 import Network.Wai.Middleware.Static
-import Network.Wai.Middleware.RequestLogger (logStdoutDev, logStdout)
+import Network.Wai.Middleware.RequestLogger (logStdout)
 import Network.Wai.Middleware.JWT
-import Control.Applicative
 import Control.Monad.IO.Class
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as C
-import Data.Pool(Pool, createPool, withResource)
+import Data.Pool(createPool)
 import qualified Data.Text.Lazy as TL
 import Database.PostgreSQL.Simple
 
@@ -28,16 +28,16 @@ makeDbConfig :: C.Config -> IO (Maybe Db.DbConfig)
 makeDbConfig conf = do
   name <- C.lookup conf "database.name" :: IO (Maybe String)
   user <- C.lookup conf "database.user" :: IO (Maybe String)
-  password <- C.lookup conf "database.password" :: IO (Maybe String)
+  pwd <- C.lookup conf "database.password" :: IO (Maybe String)
   return $ DbConfig <$> name
                     <*> user
-                    <*> password
+                    <*> pwd
 
 -- The function knows which resources are available only for the
 -- authenticated users
 protectedResources ::  Request -> IO Bool
-protectedResources request = do
-    let path = pathInfo request
+protectedResources req = do
+    let path = pathInfo req
     return $ protect path
     where protect (p : _) =  p == "sessions"  -- all requests to /admin/* should be authenticated
           protect _       =  False         -- other requests are allowed for anonymous users
@@ -47,6 +47,7 @@ main :: IO ()
 main = do
     loadedConf <- C.load [C.Required "application.conf"]
     dbConf <- makeDbConfig loadedConf
+    now <- getCurrentTime
 
     case dbConf of
       Nothing -> putStrLn "No database configuration found, terminating..."
@@ -67,7 +68,7 @@ main = do
                                              Nothing ->
                                                forbidden
                                              Just mu ->
-                                               (viewUser . addToken) mu
+                                               viewUser $ addToken now mu
 
               -- LIST
               get    "/sessions" $ do sessions <- liftIO $ listSessions pool  -- get the ist of session for DB
@@ -98,14 +99,12 @@ main = do
 -- Parse the request body into the User
 getUserParam :: ActionT TL.Text IO (Maybe User)
 getUserParam = do b <- body
-                  return $ (decode b :: Maybe User)
-                  where makeUser u = ""
+                  return (decode b :: Maybe User)
 
 -- Parse the request body into the Session
 getSessionParam :: ActionT TL.Text IO (Maybe Session)
 getSessionParam = do b <- body
-                     return $ (decode b :: Maybe Session)
-                     where makeSession s = ""
+                     return (decode b :: Maybe Session)
 
 forbidden :: ActionM ()
 forbidden = do

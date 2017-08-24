@@ -24,19 +24,14 @@ calculateExpiration time =
       new_day = addDays 90 current_day
   in utcTimeToPOSIXSeconds (UTCTime new_day (fromIntegral 0))
 
-generateExpiration :: IO NominalDiffTime
-generateExpiration = calculateExpiration <$> getCurrentTime
-
-addToken :: User -> Maybe User
-addToken user =
+addToken :: UTCTime -> User -> Maybe User
+addToken currentTime user =
   let
       cs = def { -- def returns a default JWTClaimsSet
          sub = stringOrURI (pack (show (id (user :: User))))
-         , exp = numericDate $ generateExpiration
+         , exp = numericDate $ calculateExpiration currentTime
          , unregisteredClaims = Map.fromList [("http://example.com/is_root", (Bool True))]
       }
       key = secret "1978@rpa"
-  in
-     do
-        let token = encodeSigned HS256 key cs
-        Just user { access_token = fromStrict token }
+      token = encodeSigned HS256 key cs
+  in Just user { access_token = fromStrict token }
