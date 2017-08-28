@@ -27,6 +27,7 @@ executable          jogging-tracker
                   , word8                         >= 0.1
                   , time
                   , jose                          >= 0.4
+                  , mtl                           >= 2.2.1
                   , configurator                  >= 0.3.0.0
                   , containers                    >= 0.5.7.1
                   , time                          >= 1.6.0.1

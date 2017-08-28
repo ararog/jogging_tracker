@@ -11,7 +11,8 @@ import Control.Monad.IO.Class
 import Data.Aeson hiding (json)
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as C
-import Data.Pool(createPool)
+import Data.Maybe(fromMaybe)
+import Data.Pool(Pool, createPool)
 import Database.PostgreSQL.Simple
 import qualified Data.Text.Lazy as TL
 import Data.Time
@@ -57,19 +58,9 @@ main = do
               middleware $ logStdout                                  -- log all requests; for production use logStdout
               middleware $ jwt "1978@rpa" ["/auth", "/test", "/favicon.ico"]
 
-              post "/auth/login" $ do user <- getUserParam             -- read the request body, try to parse it into user
-                                      now <- liftIO getCurrentTime
-                                      case user of
-                                        Nothing ->
-                                           forbidden
-                                        Just u -> do
-                                           maybeUser <- liftIO $ findUserByLogin pool (email u) (password u)-- get the user from the DB
-                                           case maybeUser of
-                                             Nothing ->
-                                               forbidden
-                                             Just mu ->
-                                               viewUser $ addToken now mu
-
+              post "/auth/login" $ do now <- liftIO getCurrentTime
+                                      muser <- getUserParam >>= findUserByLogin' pool
+                                      maybe forbidden (viewUser . addToken now) muser
               -- LIST
               get    "/sessions" $ do sessions <- liftIO $ listSessions pool  -- get the ist of session for DB
                                       sessionsList sessions                   -- show session list
@@ -95,6 +86,12 @@ main = do
                                           deletedSession _id      -- show info that the session was deleted
 
 -----------------------------------------------
+
+-- funcao auxiliar no Main.hs
+findUserByLogin' :: Pool Connection ->  Maybe User -> ActionM (Maybe User)
+findUserByLogin' pool mu =
+  liftIO $ fromMaybe (return Nothing)
+            ((\u -> findUserByLogin pool (email u) (password u)) <$> mu)
 
 -- Parse the request body into the User
 getUserParam :: ActionT TL.Text IO (Maybe User)
